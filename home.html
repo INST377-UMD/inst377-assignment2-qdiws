@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Home</title>
+  <link rel="stylesheet" href="css/styles.css">
+
+  <style>
+    body {
+      font-family: sans-serif;
+    }
+
+    .navbar {
+      list-style: none;
+      display: flex;
+      gap: 2em;
+      justify-content: center;
+      background-color: #333;
+      padding: 1em;
+      margin: 0;
+    }
+
+    .navbar li a {
+      color: white;
+      text-decoration: none;
+      padding: 0.5em 1em;
+    }
+
+    .navbar li a:hover {
+      background-color: #555;
+      border-radius: 4px;
+    }
+
+    .button-container {
+      display: flex;
+      gap: 1em;
+      justify-content: center;
+      margin: 2em 0;
+    }
+
+    .button-12 {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 6px 14px;
+      font-family: -apple-system, BlinkMacSystemFont, 'Roboto', sans-serif;
+      border-radius: 6px;
+      border: none;
+      background: #6E6D70;
+      box-shadow: 0px 0.5px 1px rgba(0, 0, 0, 0.1),
+                  inset 0px 0.5px 0.5px rgba(255, 255, 255, 0.5),
+                  0px 0px 0px 0.5px rgba(0, 0, 0, 0.12);
+      color: #DFDEDF;
+      user-select: none;
+      touch-action: manipulation;
+    }
+
+    .button-12:focus {
+      box-shadow: inset 0px 0.8px 0px -0.25px rgba(255, 255, 255, 0.2),
+                  0px 0.5px 1px rgba(0, 0, 0, 0.1),
+                  0px 0px 0px 3.5px rgba(58, 108, 217, 0.5);
+      outline: 0;
+    }
+
+    .quote-box {
+      text-align: center;
+      margin: 2em auto 1em;
+      padding: 1em;
+      max-width: 600px;
+      background-color: #f2f2f2;
+      border-radius: 8px;
+      font-style: italic;
+    }
+
+    .audio-controls {
+      background-color: #eee;
+      padding: 1em;
+      margin-top: 3em;
+      text-align: center;
+    }
+
+    h1, h2 {
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Navigation -->
+  <nav>
+    <ul class="navbar">
+      <li><a href="index.html">Home</a></li>
+      <li><a href="stocks.html">Stocks</a></li>
+      <li><a href="dogs.html">Dogs</a></li>
+    </ul>
+  </nav>
+
+  <h1>Welcome to the Home Page</h1>
+
+  <!-- Button Section -->
+  <div class="button-container">
+    <a href="stocks.html"><button class="button-12">Stocks</button></a>
+    <a href="dogs.html"><button class="button-12">Dogs</button></a>
+  </div>
+
+  <!-- Quote of the Day -->
+  <div class="quote-box" id="quoteBox">
+    <h2>Quote of the Day</h2>
+    <p id="dailyQuote">Loading quote...</p>
+  </div>
+
+  <!-- Audio instructions -->
+  <div class="audio-controls">
+    <h2>Voice Commands</h2>
+    <p>Say “hello” → shows Hello World</p>
+    <p>Say “change the color to blue/red/etc” → changes background</p>
+    <p>Say “navigate to home/stocks/dogs” → switches page</p>
+    <button onclick="startAudio()">Turn On Audio</button>
+    <button onclick="stopAudio()">Turn Off Audio</button>
+  </div>
+
+  <!-- JS Libraries -->
+  <script src="//cdnjs.cloudflare.com/ajax/libs/annyang/2.6.1/annyang.min.js"></script>
+  <script src="//cdnjs.cloudflare.com/ajax/libs/SpeechKITT/0.3.0/speechkitt.min.js"></script>
+
+  <script>
+    async function loadQuote() {
+  try {
+    const proxyURL = "https://api.allorigins.win/get?disableCache=true&url=" + encodeURIComponent("https://zenquotes.io/api/random");
+    const res = await fetch(proxyURL);
+    const json = await res.json();
+    const data = JSON.parse(json.contents);
+    const quoteText = `${data[0].q} — ${data[0].a}`;
+    document.getElementById("dailyQuote").textContent = quoteText;
+  } catch (error) {
+    document.getElementById("dailyQuote").textContent = "Could not load quote.";
+    console.error("Quote API error:", error);
+  }
+}
+
+
+    function startAudio() {
+      if (annyang) {
+        const commands = {
+          'hello': () => alert('Hello world!'),
+          'change the color to *color': (color) => {
+            document.body.style.backgroundColor = color;
+          },
+          'navigate to *page': (page) => {
+            const target = page.toLowerCase();
+            if (["home", "stocks", "dogs"].includes(target)) {
+              window.location.href = `${target}.html`;
+            }
+          }
+        };
+
+        annyang.addCommands(commands);
+        SpeechKITT.annyang();
+        SpeechKITT.setStylesheet('//cdnjs.cloudflare.com/ajax/libs/SpeechKITT/0.3.0/themes/flat.css');
+        SpeechKITT.vroom();
+        annyang.start();
+      }
+    }
+
+    function stopAudio() {
+      if (annyang) {
+        annyang.abort();
+        SpeechKITT.hide();
+      }
+    }
+
+    document.addEventListener("DOMContentLoaded", loadQuote);
+  </script>
+
+</body>
+</html>
