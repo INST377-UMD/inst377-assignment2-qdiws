@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Dogs</title>
+  <link rel="stylesheet" href="css/styles.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/simple-slider/1.0.0/simpleslider.min.js"></script>
+
+  <style>
+    body {
+      font-family: sans-serif;
+    }
+
+    .navbar {
+      list-style: none;
+      display: flex;
+      gap: 2em;
+      justify-content: center;
+      background-color: #333;
+      padding: 1em;
+      margin: 0;
+    }
+
+    .navbar li a {
+      color: white;
+      text-decoration: none;
+      padding: 0.5em 1em;
+    }
+
+    .navbar li a:hover {
+      background-color: #555;
+      border-radius: 4px;
+    }
+
+    .button-12 {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 6px 14px;
+      font-family: -apple-system, BlinkMacSystemFont, 'Roboto', sans-serif;
+      border-radius: 6px;
+      border: none;
+      background: #6E6D70;
+      box-shadow: 0px 0.5px 1px rgba(0, 0, 0, 0.1),
+                  inset 0px 0.5px 0.5px rgba(255, 255, 255, 0.5),
+                  0px 0px 0px 0.5px rgba(0, 0, 0, 0.12);
+      color: #DFDEDF;
+      user-select: none;
+      touch-action: manipulation;
+      margin: 0.3em;
+    }
+
+    .carousel-container {
+      margin: 2em auto;
+      width: 612px;
+      height: 612px;
+    }
+
+    .breeds-container {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 0.5em;
+      margin: 2em;
+    }
+
+    .info-box {
+      text-align: center;
+      margin-top: 1em;
+      background-color: #f2f2f2;
+      padding: 1em;
+      border-radius: 6px;
+      max-width: 600px;
+      margin-left: auto;
+      margin-right: auto;
+      display: none;
+    }
+
+    .audio-controls {
+      background-color: #eee;
+      padding: 1em;
+      margin-top: 3em;
+      text-align: center;
+    }
+
+    h1, h2 {
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Navigation -->
+  <nav>
+    <ul class="navbar">
+      <li><a href="home.html">Home</a></li>
+      <li><a href="stocks.html">Stocks</a></li>
+      <li><a href="dogs.html">Dogs</a></li>
+    </ul>
+  </nav>
+
+  <h1>Doggos!🐶 </h1>
+
+  <!-- Carousel -->
+  <div class="carousel-container" id="dogCarousel" data-simple-slider></div>
+
+  <!-- Breed Buttons -->
+  <h2>Explore Dog Breeds</h2>
+  <div class="breeds-container" id="breedButtons"></div>
+
+  <!-- Info Display -->
+  <div class="info-box" id="breedInfo"></div>
+
+  <!-- Audio instructions -->
+  <div class="audio-controls">
+    <h2>Voice Commands</h2>
+    <p>Say “hello” → shows Hello World</p>
+    <p>Say “change the color to blue/red/etc” → changes background</p>
+    <p>Say “navigate to home/stocks/dogs” → switches page</p>
+    <p>Say “load dog breed &lt;breed name&gt;” → displays breed information</p>
+    <button onclick="startAudio()">Turn On Audio</button>
+    <button onclick="stopAudio()">Turn Off Audio</button>
+  </div>
+
+  <!-- Voice + JS -->
+  <script src="//cdnjs.cloudflare.com/ajax/libs/annyang/2.6.1/annyang.min.js"></script>
+  <script src="//cdnjs.cloudflare.com/ajax/libs/SpeechKITT/0.3.0/speechkitt.min.js"></script>
+
+  <script>
+    async function loadCarousel() {
+  const container = document.getElementById("dogCarousel");
+
+  try {
+    const res = await fetch("https://dog.ceo/api/breeds/image/random/10");
+    const data = await res.json();
+
+    data.message.forEach(imgUrl => {
+      const img = document.createElement("img");
+      img.src = imgUrl;
+      img.style.width = "612px";
+      img.style.height = "612px";
+      container.appendChild(img);
+    });
+
+    simpleslider.getSlider();
+  } catch (err) {
+    console.error("Failed to load dog images", err);
+  }
+}
+async function loadBreeds() {
+  const res = await fetch("https://dogapi.dog/api/v2/breeds?page[size]=1000");
+  const data = await res.json();
+  const allBreeds = data.data;
+
+  // Shuffle and select 10 breeds
+  const random10 = allBreeds.sort(() => 0.5 - Math.random()).slice(0, 10);
+
+  const breedContainer = document.getElementById("breedButtons");
+  breedContainer.innerHTML = "";
+
+  random10.forEach(breed => {
+    const btn = document.createElement("button");
+    btn.textContent = breed.attributes.name;
+    btn.className = "button-12";
+    btn.onclick = () => showBreedInfo(breed);
+    breedContainer.appendChild(btn);
+  });
+}
+
+
+    function showBreedInfo(breed) {
+  const infoDiv = document.getElementById("breedInfo");
+  infoDiv.style.display = "block";
+
+  const name = breed.attributes.name;
+  const description = breed.attributes.description;
+  const lifeMin = breed.attributes.life?.min ?? "N/A";
+  const lifeMax = breed.attributes.life?.max ?? "N/A";
+
+  infoDiv.innerHTML = `
+    <h3>${name}</h3>
+    <p>${description}</p>
+    <p><strong>Lifespan:</strong> ${lifeMin}–${lifeMax} years</p>
+  `;
+}
+
+    function startAudio() {
+      if (annyang) {
+        const commands = {
+          'hello': () => alert('Hello world!'),
+          'change the color to *color': (color) => {
+            document.body.style.backgroundColor = color;
+          },
+          'navigate to *page': (page) => {
+            const target = page.toLowerCase();
+            if (["home", "stocks", "dogs"].includes(target)) {
+              window.location.href = `${target}.html`;
+            }
+          },
+          'load dog breed *breed': (breedName) => {
+            const breedButtons = document.querySelectorAll('#breedButtons button');
+            breedButtons.forEach(button => {
+              if (button.textContent.toLowerCase() === breedName.toLowerCase()) {
+                button.click();
+              }
+            });
+          }
+        };
+
+        annyang.addCommands(commands);
+        SpeechKITT.annyang();
+        SpeechKITT.setStylesheet('//cdnjs.cloudflare.com/ajax/libs/SpeechKITT/0.3.0/themes/flat.css');
+        SpeechKITT.vroom();
+        annyang.start();
+      }
+    }
+
+    function stopAudio() {
+      if (annyang) {
+        annyang.abort();
+        SpeechKITT.hide();
+      }
+    }
+
+    // Load everything
+    document.addEventListener("DOMContentLoaded", () => {
+      loadCarousel();
+      loadBreeds();
+    });
+  </script>
+</body>
+</html>
